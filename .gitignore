@@ -1,0 +1,56 @@
+*.class
+*.log
+*.log.*
+
+# Ballerina
+Ballerina.lock
+
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+.idea
+*.iml
+*.ipr
+*.iws
+
+# generated files
+target
+results
+.ballerina
+/gen
+/compiler/ballerina-lang/src/main/resources/grammar/BallerinaLexer.tokens
+/composer/modules/web/dist-electron/
+velocity.log
+/composer/modules/web/dist-electron
+extractedDistribution
+misc/testerina/modules/report-tools/node_modules/
+
+# gradle
+.gradle
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# mac
+.DS_Store
+
+.classpath
+.project
+.settings
+.vscode
+
+# java packages
+!/compiler/ballerina-lang/src/main/java/io/ballerina/build
+
+# code coverage reports
+/.jacoco

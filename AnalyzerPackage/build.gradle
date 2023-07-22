@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+}
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Define a task to pack
+task pack(type: Exec) {
+    workingDir 'src/main/ballerina'
+    commandLine 'bal', 'pack'
+}
+
+// Define a task to push that depends on pack
+task push(type: Exec, dependsOn: 'pack') {
+    workingDir 'src/main/ballerina'
+    commandLine 'bal', 'push', '--repository=local'
+}
+
+build.dependsOn(push)

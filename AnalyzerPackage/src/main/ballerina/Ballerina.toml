@@ -1,0 +1,4 @@
+[package]
+org = "microrts"
+name = "static_analyzer"
+version = "1.0.0"

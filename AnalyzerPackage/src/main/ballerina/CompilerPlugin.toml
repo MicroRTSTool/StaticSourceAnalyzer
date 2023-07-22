@@ -1,0 +1,5 @@
+[plugin]
+class = "org.rts.micro.MicroRTSCompilerPlugin"
+
+[[dependency]]
+path = "./resources/lib/StaticSourceAnalyzerPlugin-1.0.0.jar"

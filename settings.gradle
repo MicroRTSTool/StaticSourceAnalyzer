@@ -1,0 +1,3 @@
+rootProject.name = 'StaticSourceAnalyzer'
+include 'AnalyzerPlugin'
+include 'AnalyzerPackage'
