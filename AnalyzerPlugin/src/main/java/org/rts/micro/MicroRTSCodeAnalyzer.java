@@ -44,11 +44,6 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
         Map<String, String> clientDetails = new HashMap<>();
 
         analysisContext.addSyntaxNodeAnalysisTask(syntaxNodeAnalysisContext -> {
-            processNode(remoteInvokerFunctions, syntaxNodeAnalysisContext.node());
-
-        }, Arrays.asList(SyntaxKind.REMOTE_METHOD_CALL_ACTION, SyntaxKind.CLIENT_RESOURCE_ACCESS_ACTION));
-
-        analysisContext.addSyntaxNodeAnalysisTask(syntaxNodeAnalysisContext -> {
             if (syntaxNodeAnalysisContext.node() instanceof ImplicitNewExpressionNode) {
                 ImplicitNewExpressionNode implicitNewExpressionNode = (ImplicitNewExpressionNode) syntaxNodeAnalysisContext.node();
                 String clientName = findClientName(implicitNewExpressionNode);
@@ -59,14 +54,17 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
                             PositionalArgumentNode positionalArgumentNode = (PositionalArgumentNode) argList.children().get(1);
                             // basic literal
                             clientDetails.put(clientName, positionalArgumentNode.children().get(0).toString());
+                            System.out.println("Client Name: " + clientName + " URL: " + positionalArgumentNode.children().get(0).toString());
                         }
-
                     }
                 }
-
+            } else {
+                processNode(remoteInvokerFunctions, syntaxNodeAnalysisContext.node());
             }
-        }, Arrays.asList(SyntaxKind.IMPLICIT_NEW_EXPRESSION));
-        analysisContext.addCompilationAnalysisTask(new CompilationAnalysisTask(remoteInvokerFunctions));
+
+        }, Arrays.asList(SyntaxKind.IMPLICIT_NEW_EXPRESSION, SyntaxKind.REMOTE_METHOD_CALL_ACTION, SyntaxKind.CLIENT_RESOURCE_ACCESS_ACTION));
+
+        analysisContext.addCompilationAnalysisTask(new CompilationAnalysisTask(remoteInvokerFunctions, clientDetails));
     }
 
     private String findClientName(ImplicitNewExpressionNode implicitNewExpressionNode) {

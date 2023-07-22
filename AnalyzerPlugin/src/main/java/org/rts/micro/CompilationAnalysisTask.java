@@ -1,5 +1,7 @@
 package org.rts.micro;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.api.symbols.Symbol;
 import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
@@ -27,21 +29,9 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
 
     private static final String TEST_MODULE_NAME = "test";
     List<RemoteInvokerFunction> remoteInvokerFunctions;
-
-    CompilationAnalysisTask(List<RemoteInvokerFunction> remoteInvokerFunctions) {
-//        List<RemoteInvokerFunction> updatedInvokerFunctions = new ArrayList<>();
-//        remoteInvokerFunctions.forEach(remoteInvokerFunction -> {
-//            List<String> updatedCalledClients = new ArrayList<>();
-//            List<String> calledClients = remoteInvokerFunction.getCalledClients();
-//            for (String calledClient : calledClients) {
-//                if (clientDetails.containsKey(calledClient)) {
-//                    updatedCalledClients.add(clientDetails.get(calledClient));
-//                }
-//            }
-//            remoteInvokerFunction.setCalledClients(updatedCalledClients);
-//            updatedInvokerFunctions.add(remoteInvokerFunction);
-//        });
-//        this.remoteInvokerFunctions = updatedInvokerFunctions;
+    Map<String, String> clientDetails;
+    CompilationAnalysisTask(List<RemoteInvokerFunction> remoteInvokerFunctions, Map<String, String> clientDetails) {
+        this.clientDetails = clientDetails;
         this.remoteInvokerFunctions = remoteInvokerFunctions;
     }
 
@@ -96,10 +86,43 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
                 }
             });
         });
+
+        clientDetails.forEach(
+                (key, value) -> {
+                    System.out.println("Key: " + key + " Value: " + value);
+                }
+        );
+
+        List<RemoteInvokerFunction> updatedInvokerFunctions = new ArrayList<>();
         remoteInvokerFunctions.forEach(remoteInvokerFunction -> {
-            System.out.println("Remote invoker function: ");
-            System.out.println(remoteInvokerFunction.toString());
+            List<String> updatedCalledClients = new ArrayList<>();
+            List<String> calledClients = remoteInvokerFunction.getCalledClients();
+            ObjectMapper objectMapper = new ObjectMapper();
+            for (String calledClient : calledClients) {
+                for (String key : clientDetails.keySet()) {
+                    if (key.trim().equals(calledClient.trim())) {
+                        try {
+                            updatedCalledClients.add(objectMapper.readValue(clientDetails.get(key), String.class));
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                }
+            }
+            remoteInvokerFunction.setCalledClients(updatedCalledClients);
+            updatedInvokerFunctions.add(remoteInvokerFunction);
         });
+        this.remoteInvokerFunctions = updatedInvokerFunctions;
+        Map<String, List<String>> testToSvcData = new HashMap<>();
+        updatedInvokerFunctions.forEach(
+                remoteInvokerFunction -> {
+                    if (remoteInvokerFunction.isTest()) {
+                        testToSvcData.put(remoteInvokerFunction.getName(), remoteInvokerFunction.getCalledClients());
+                    }
+                }
+        );
+        Utils.writeToFile(testToSvcData, "test_svc_mappings.json");
     }
 
     private void updateRemoteInvokerFunction(List<RemoteInvokerFunction> remoteInvokerFunctions,
