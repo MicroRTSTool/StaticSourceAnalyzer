@@ -3,16 +3,8 @@ package org.rts.micro;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ballerina.compiler.api.SemanticModel;
-import io.ballerina.compiler.api.symbols.Symbol;
 import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
-import io.ballerina.compiler.syntax.tree.ModulePartNode;
-import io.ballerina.compiler.syntax.tree.SyntaxKind;
-import io.ballerina.compiler.syntax.tree.SyntaxTree;
-import io.ballerina.projects.Document;
-import io.ballerina.projects.Module;
 import io.ballerina.projects.Package;
-import io.ballerina.projects.Project;
-import io.ballerina.projects.ProjectKind;
 import io.ballerina.projects.plugins.AnalysisTask;
 import io.ballerina.projects.plugins.CompilationAnalysisContext;
 import io.ballerina.tools.diagnostics.Location;
@@ -23,16 +15,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysisContext> {
 
     private static final String TEST_MODULE_NAME = "test";
     List<RemoteInvokerFunction> remoteInvokerFunctions;
     Map<String, String> clientDetails;
-    CompilationAnalysisTask(List<RemoteInvokerFunction> remoteInvokerFunctions, Map<String, String> clientDetails) {
+
+    List<String> svcMappings;
+
+    CompilationAnalysisTask(List<RemoteInvokerFunction> remoteInvokerFunctions, Map<String, String> clientDetails,
+                            List<String> svcMappings) {
         this.clientDetails = clientDetails;
         this.remoteInvokerFunctions = remoteInvokerFunctions;
+        this.svcMappings = svcMappings;
     }
 
 
@@ -63,7 +59,7 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
                                     List<Location> referenceLocations = new ArrayList<>();
                                     semanticModel.references(symbol).forEach(
                                             location -> {
-                                                if(!symbol.getLocation().get().equals(location)) {
+                                                if (!symbol.getLocation().get().equals(location)) {
                                                     referenceLocations.add(location);
                                                 }
                                             });
@@ -86,18 +82,12 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
                 }
             });
         });
-
-        clientDetails.forEach(
-                (key, value) -> {
-                    System.out.println("Key: " + key + " Value: " + value);
-                }
-        );
-
+        ObjectMapper objectMapper = new ObjectMapper();
+        // Write test to client data
         List<RemoteInvokerFunction> updatedInvokerFunctions = new ArrayList<>();
         remoteInvokerFunctions.forEach(remoteInvokerFunction -> {
             List<String> updatedCalledClients = new ArrayList<>();
             List<String> calledClients = remoteInvokerFunction.getCalledClients();
-            ObjectMapper objectMapper = new ObjectMapper();
             for (String calledClient : calledClients) {
                 for (String key : clientDetails.keySet()) {
                     if (key.trim().equals(calledClient.trim())) {
@@ -122,7 +112,25 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
                     }
                 }
         );
-        Utils.writeToFile(testToSvcData, "test_svc_mappings.json");
+
+        if (!testToSvcData.isEmpty()) {
+            Utils.writeListToFile(testToSvcData, "test_svc_mappings.json");
+        }
+
+        // Write svc path mappings
+        String projectPath = compilationAnalysisContext.currentPackage().project().sourceRoot().toString();
+        Map<String, String> svcPathMappings = new HashMap<>();
+        for (String svc : this.svcMappings) {
+            try {
+                svcPathMappings.put(objectMapper.readValue(svc, String.class), projectPath);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (!svcPathMappings.isEmpty()) {
+            Utils.writeToFile(svcPathMappings, "svc_path_mappings.json");
+        }
     }
 
     private void updateRemoteInvokerFunction(List<RemoteInvokerFunction> remoteInvokerFunctions,

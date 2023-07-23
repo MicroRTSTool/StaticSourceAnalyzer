@@ -78,7 +78,18 @@ public class Utils {
         return modules;
     }
 
-    public static void writeToFile(Map<String, List<String>> data, String filePath) {
+    public static void writeListToFile(Map<String, List<String>> data, String filePath) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            // Write the map to a file in JSON format
+            File file = new File(filePath);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeToFile(Map<String, String> data, String filePath) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             // Write the map to a file in JSON format
