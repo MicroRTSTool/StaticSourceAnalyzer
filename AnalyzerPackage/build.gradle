@@ -23,13 +23,15 @@ test {
 // Define a task to pack
 task pack(type: Exec) {
     workingDir 'src/main/ballerina'
+    environment 'BALLERINA_DEV_CENTRAL', 'true'
     commandLine 'bal', 'pack'
 }
 
 // Define a task to push that depends on pack
 task push(type: Exec, dependsOn: 'pack') {
     workingDir 'src/main/ballerina'
-    commandLine 'bal', 'push', '--repository=local'
+    environment 'BALLERINA_DEV_CENTRAL', 'true'
+    commandLine 'bal', 'push'
 }
 
 build.dependsOn(push)

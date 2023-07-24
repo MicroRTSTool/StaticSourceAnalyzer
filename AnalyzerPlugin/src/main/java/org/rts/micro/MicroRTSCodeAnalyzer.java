@@ -51,7 +51,7 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
             if (syntaxNodeAnalysisContext.node() instanceof ServiceDeclarationNode) {
                 ServiceDeclarationNode serviceDeclarationNode = (ServiceDeclarationNode) syntaxNodeAnalysisContext.node();
                 Optional<MetadataNode> metadata = serviceDeclarationNode.metadata();
-                if(metadata.isPresent()) {
+                if (metadata.isPresent()) {
                     MetadataNode metadataNode = metadata.get();
                     NodeList<AnnotationNode> annotations = metadataNode.annotations();
                     annotations.forEach(annotationNode -> {
@@ -83,9 +83,10 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
                 ImplicitNewExpressionNode implicitNewExpressionNode = (ImplicitNewExpressionNode) syntaxNodeAnalysisContext.node();
                 String clientName = findClientName(implicitNewExpressionNode);
                 if (clientName != null) {
-                    if(implicitNewExpressionNode.children().get(1) instanceof ParenthesizedArgList){
+                    if (implicitNewExpressionNode.children().size() > 1 &&
+                            implicitNewExpressionNode.children().get(1) instanceof ParenthesizedArgList) {
                         ParenthesizedArgList argList = (ParenthesizedArgList) implicitNewExpressionNode.children().get(1);
-                        if( argList.children().get(1) instanceof PositionalArgumentNode){
+                        if (argList.children().size() > 1 && argList.children().get(1) instanceof PositionalArgumentNode) {
                             PositionalArgumentNode positionalArgumentNode = (PositionalArgumentNode) argList.children().get(1);
                             // basic literal
                             clientDetails.put(clientName, positionalArgumentNode.children().get(0).toString());
@@ -120,16 +121,19 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
             }
             if (node instanceof VariableDeclarationNode) {
                 VariableDeclarationNode variableDeclarationNode = (VariableDeclarationNode) node;
-                if (variableDeclarationNode.children().get(0) instanceof TypedBindingPatternNode) {
+                if (variableDeclarationNode.children().size() > 0 &&
+                        variableDeclarationNode.children().get(0) instanceof TypedBindingPatternNode) {
                     TypedBindingPatternNode typedBindingPatternNode =
                             (TypedBindingPatternNode) variableDeclarationNode.children().get(0);
-                    if (typedBindingPatternNode.children().get(1) instanceof CaptureBindingPatternNode) {
+                    if (typedBindingPatternNode.children().size() > 1 &&
+                            typedBindingPatternNode.children().get(1) instanceof CaptureBindingPatternNode) {
                         CaptureBindingPatternNode captureBindingPatternNode =
                                 (CaptureBindingPatternNode) typedBindingPatternNode.children().get(1);
                         // identifier token
                         return captureBindingPatternNode.children().get(0).toString();
                     }
                 }
+
             }
             node = node.parent();
         }
