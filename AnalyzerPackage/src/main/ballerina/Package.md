@@ -1,5 +1,5 @@
-Prints "Hello, World!" with a hello function.
+Analyses Ballerina syntax for regression test selection.
 [//]: # (above is the package summary)
 
 # Package Overview
-Prints "Hello, World!" as the output to the command line using a hello function.
+Analyses Ballerina syntax for regression test selection using syntax and compilation analysis APIs for Ballerina.

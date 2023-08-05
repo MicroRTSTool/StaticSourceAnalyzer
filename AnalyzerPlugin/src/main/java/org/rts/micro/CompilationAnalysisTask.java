@@ -31,7 +31,6 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
         this.svcMappings = svcMappings;
     }
 
-
     @Override
     public void perform(CompilationAnalysisContext compilationAnalysisContext) {
         // get non test functions from the remote invoker functions
@@ -48,7 +47,6 @@ public class CompilationAnalysisTask implements AnalysisTask<CompilationAnalysis
         List<org.rts.micro.models.Module> modules = Utils.getModules(pack);
 
         // Get references for test only functions which have client calls
-        // TODO: Get references for non test functions which have client calls
         modules.forEach(module -> {
             module.getTestOnlyScopedFunctions().forEach(testScopedFunction -> {
                 nonTestRemoteInvokerFunctions.forEach(nonTestRemoteInvokerFunction -> {

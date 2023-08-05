@@ -1,4 +1,4 @@
 [package]
-org = "microrts"
+org = "micrortstool"
 name = "static_analyzer"
 version = "1.0.0"

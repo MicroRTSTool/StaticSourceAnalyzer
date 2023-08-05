@@ -88,7 +88,6 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
                         ParenthesizedArgList argList = (ParenthesizedArgList) implicitNewExpressionNode.children().get(1);
                         if (argList.children().size() > 1 && argList.children().get(1) instanceof PositionalArgumentNode) {
                             PositionalArgumentNode positionalArgumentNode = (PositionalArgumentNode) argList.children().get(1);
-                            // basic literal
                             clientDetails.put(clientName, positionalArgumentNode.children().get(0).toString());
                         }
                     }
@@ -99,7 +98,6 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
 
         }, Arrays.asList(SyntaxKind.SERVICE_DECLARATION, SyntaxKind.IMPLICIT_NEW_EXPRESSION,
                 SyntaxKind.REMOTE_METHOD_CALL_ACTION, SyntaxKind.CLIENT_RESOURCE_ACCESS_ACTION));
-
         analysisContext.addCompilationAnalysisTask(new CompilationAnalysisTask(remoteInvokerFunctions, clientDetails, svcPathMappings));
     }
 

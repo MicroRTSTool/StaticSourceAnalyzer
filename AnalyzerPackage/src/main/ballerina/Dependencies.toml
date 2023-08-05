@@ -8,10 +8,10 @@ dependencies-toml-version = "2"
 distribution-version = "2201.7.0"
 
 [[package]]
-org = "microrts"
+org = "micrortstool"
 name = "static_analyzer"
 version = "1.0.0"
 modules = [
-	{org = "microrts", packageName = "static_analyzer", moduleName = "static_analyzer"}
+	{org = "micrortstool", packageName = "static_analyzer", moduleName = "static_analyzer"}
 ]
 
