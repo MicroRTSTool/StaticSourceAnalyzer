@@ -26,6 +26,7 @@ import io.ballerina.compiler.syntax.tree.TypedBindingPatternNode;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
 import io.ballerina.projects.plugins.CodeAnalysisContext;
 import io.ballerina.projects.plugins.CodeAnalyzer;
+import io.ballerina.projects.plugins.SyntaxNodeAnalysisContext;
 import org.rts.micro.models.RemoteInvokerFunction;
 
 import java.util.ArrayList;
@@ -49,49 +50,9 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
 
         analysisContext.addSyntaxNodeAnalysisTask(syntaxNodeAnalysisContext -> {
             if (syntaxNodeAnalysisContext.node() instanceof ServiceDeclarationNode) {
-                ServiceDeclarationNode serviceDeclarationNode = (ServiceDeclarationNode) syntaxNodeAnalysisContext.node();
-                Optional<MetadataNode> metadata = serviceDeclarationNode.metadata();
-                if (metadata.isPresent()) {
-                    MetadataNode metadataNode = metadata.get();
-                    NodeList<AnnotationNode> annotations = metadataNode.annotations();
-                    annotations.forEach(annotationNode -> {
-                        Node annotReference = annotationNode.annotReference();
-                        if (annotReference.kind() == SyntaxKind.SIMPLE_NAME_REFERENCE && annotReference.toString().trim().equals(DISPLAY)) {
-                            Optional<MappingConstructorExpressionNode> mappingNodes = annotationNode.annotValue();
-                            if (!mappingNodes.isEmpty()) {
-                                mappingNodes.get().fields().forEach(mappingFieldNode -> {
-                                    if (mappingFieldNode.kind() == SyntaxKind.SPECIFIC_FIELD) {
-                                        SpecificFieldNode specificField = (SpecificFieldNode) mappingFieldNode;
-                                        if (LABEL.equals(getFieldName(specificField))) {
-                                            ExpressionNode valueExpr = specificField.valueExpr().orElse(null);
-                                            if (valueExpr != null) {
-                                                if (SyntaxKind.STRING_LITERAL == valueExpr.kind()) {
-                                                    String serviceName = ((BasicLiteralNode) valueExpr).literalToken().text();
-                                                    svcPathMappings.add(serviceName);
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-
+                analyseServiceNode(svcPathMappings, syntaxNodeAnalysisContext);
             } else if (syntaxNodeAnalysisContext.node() instanceof ImplicitNewExpressionNode) {
-
-                ImplicitNewExpressionNode implicitNewExpressionNode = (ImplicitNewExpressionNode) syntaxNodeAnalysisContext.node();
-                String clientName = findClientName(implicitNewExpressionNode);
-                if (clientName != null) {
-                    if (implicitNewExpressionNode.children().size() > 1 &&
-                            implicitNewExpressionNode.children().get(1) instanceof ParenthesizedArgList) {
-                        ParenthesizedArgList argList = (ParenthesizedArgList) implicitNewExpressionNode.children().get(1);
-                        if (argList.children().size() > 1 && argList.children().get(1) instanceof PositionalArgumentNode) {
-                            PositionalArgumentNode positionalArgumentNode = (PositionalArgumentNode) argList.children().get(1);
-                            clientDetails.put(clientName, positionalArgumentNode.children().get(0).toString());
-                        }
-                    }
-                }
+                analyseNewExpression(clientDetails, syntaxNodeAnalysisContext);
             } else {
                 processNode(remoteInvokerFunctions, syntaxNodeAnalysisContext.node());
             }
@@ -99,6 +60,52 @@ public class MicroRTSCodeAnalyzer extends CodeAnalyzer {
         }, Arrays.asList(SyntaxKind.SERVICE_DECLARATION, SyntaxKind.IMPLICIT_NEW_EXPRESSION,
                 SyntaxKind.REMOTE_METHOD_CALL_ACTION, SyntaxKind.CLIENT_RESOURCE_ACCESS_ACTION));
         analysisContext.addCompilationAnalysisTask(new CompilationAnalysisTask(remoteInvokerFunctions, clientDetails, svcPathMappings));
+    }
+
+    private void analyseNewExpression(Map<String, String> clientDetails, SyntaxNodeAnalysisContext syntaxNodeAnalysisContext) {
+        ImplicitNewExpressionNode implicitNewExpressionNode = (ImplicitNewExpressionNode) syntaxNodeAnalysisContext.node();
+        String clientName = findClientName(implicitNewExpressionNode);
+        if (clientName != null) {
+            if (implicitNewExpressionNode.children().size() > 1 &&
+                    implicitNewExpressionNode.children().get(1) instanceof ParenthesizedArgList) {
+                ParenthesizedArgList argList = (ParenthesizedArgList) implicitNewExpressionNode.children().get(1);
+                if (argList.children().size() > 1 && argList.children().get(1) instanceof PositionalArgumentNode) {
+                    PositionalArgumentNode positionalArgumentNode = (PositionalArgumentNode) argList.children().get(1);
+                    clientDetails.put(clientName, positionalArgumentNode.children().get(0).toString());
+                }
+            }
+        }
+    }
+
+    private void analyseServiceNode(List<String> svcPathMappings, SyntaxNodeAnalysisContext syntaxNodeAnalysisContext) {
+        ServiceDeclarationNode serviceDeclarationNode = (ServiceDeclarationNode) syntaxNodeAnalysisContext.node();
+        Optional<MetadataNode> metadata = serviceDeclarationNode.metadata();
+        if (metadata.isPresent()) {
+            MetadataNode metadataNode = metadata.get();
+            NodeList<AnnotationNode> annotations = metadataNode.annotations();
+            annotations.forEach(annotationNode -> {
+                Node annotReference = annotationNode.annotReference();
+                if (annotReference.kind() == SyntaxKind.SIMPLE_NAME_REFERENCE && annotReference.toString().trim().equals(DISPLAY)) {
+                    Optional<MappingConstructorExpressionNode> mappingNodes = annotationNode.annotValue();
+                    if (!mappingNodes.isEmpty()) {
+                        mappingNodes.get().fields().forEach(mappingFieldNode -> {
+                            if (mappingFieldNode.kind() == SyntaxKind.SPECIFIC_FIELD) {
+                                SpecificFieldNode specificField = (SpecificFieldNode) mappingFieldNode;
+                                if (LABEL.equals(getFieldName(specificField))) {
+                                    ExpressionNode valueExpr = specificField.valueExpr().orElse(null);
+                                    if (valueExpr != null) {
+                                        if (SyntaxKind.STRING_LITERAL == valueExpr.kind()) {
+                                            String serviceName = ((BasicLiteralNode) valueExpr).literalToken().text();
+                                            svcPathMappings.add(serviceName);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        }
     }
 
     private String findClientName(ImplicitNewExpressionNode implicitNewExpressionNode) {
